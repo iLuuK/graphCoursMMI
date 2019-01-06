@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <title>D3JS</title>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.js"></script>
+
+</head>
+<body>
+
+<style>
+
+    .box_1{
+        margin-top: 10px;
+    }
+
+    input[type="checkbox"].switch_1{
+        font-size: 30px;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        width: 2em;
+        height: 1em;
+        background: #ddd;
+        border-radius: 3em;
+        position: relative;
+        cursor: pointer;
+        outline: none;
+        -webkit-transition: all .2s ease-in-out;
+        transition: all .2s ease-in-out;
+        margin-bottom: -10px;
+    }
+
+    input[type="checkbox"].switch_1:checked{
+        background: var(--tp-color);
+    }
+
+    input[type="checkbox"].switch_1:after{
+        position: absolute;
+        content: "";
+        width: 1em;
+        height: 1em;
+        border-radius: 50%;
+        background: #fff;
+        -webkit-box-shadow: 0 0 .25em rgba(0,0,0,.3);
+        box-shadow: 0 0 .25em rgba(0,0,0,.3);
+        -webkit-transform: scale(.7);
+        transform: scale(.7);
+        left: 0;
+        -webkit-transition: all .2s ease-in-out;
+        transition: all .2s ease-in-out;
+    }
+
+    input[type="checkbox"].switch_1:checked:after{
+        left: calc(100% - 1.1em);
+    }
+
+    @import url("https://fonts.googleapis.com/css?family=Roboto:300,400,700");
+
+    :root {
+        --main-color: #242121;
+        --cm-color: #196B3D;
+        --td-color: #29B064;
+        --tp-color: #3CFF91;
+        --light-grey: #CCCCCC;
+        --dark-grey: #666666;
+    }
+
+    html {
+        font-size: 62.5%;
+    }
+
+    body {
+        font-size: 1.6rem;
+        font-family: 'Roboto', sans-serif;
+        font-weight: 300;
+        color: white;
+        background: var(--main-color);
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 0 30px;
+    }
+    #cm{
+        color: var(--cm-color);
+    }
+
+    #td{
+        color: var(--td-color);
+    }
+
+    #tp{
+        color: var(--tp-color);
+    }
+
+    .dataviz {
+        margin-top: 50px;
+    }
+
+    .module_bar {
+        fill: var(--cm-color);
+    }
+
+    .module_bar2 {
+        fill: var(--td-color);
+    }
+    .module_bar3 {
+        fill: var(--tp-color);
+    }
+
+    .x.axis text {
+        font-size: 1.2rem;
+        fill: var(--dark-grey);
+    }
+    .axis path { display: none; }
+    .axis line {
+        fill: none;
+        stroke: var(--dark-grey);
+    }
+
+    .y.axis {
+        font-size: 1.4rem;
+        text-anchor: end;
+    }
+
+    .module_id,
+    .module_name {
+        fill: white;
+    }
+    .module_id {
+        font-weight: 700;
+    }
+    .module_hours {
+        fill: var(--cm-color);
+        font-size: 1.4rem;
+        font-weight: 700;
+    }
+
+    .controls {
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        margin-bottom: 20px;
+        color: #CCCCCC; }
+
+    /* ---- SELECT ----- */
+    .select {
+        position: relative;
+        display: block;
+        width: 20rem;
+        height: 4rem;
+        overflow: hidden;
+        margin-right: 40px; }
+
+    .select::after,#myselectTrie::after {
+        content: '';
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        width: 1.2rem;
+        height: 1.2rem;
+        transform: rotate(45deg);
+        border-right: 1px solid #CCCCCC;
+        border-bottom: 1px solid #CCCCCC;
+        pointer-events: none; }
+
+    select {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        -ms-appearance: none;
+        appearance: none;
+        outline: 0;
+        color: #CCCCCC;
+        box-shadow: none;
+        border: none;
+        border-bottom: 1px solid #666;
+        border-radius: 0;
+        background: none;
+        font-size: 1.4rem;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0 0 0 .5rem;
+        cursor: pointer; }
+    select::-ms-expand {
+        display: none; }
+
+
+
+
+
+
+
+
+
+    /**/
+
+
+</style>
+<h1>Heures d'enseignement des modules par semestre</h1>
+<p>Les Cours Magistraux (CM) ont lieu en classe entière, les Travaux Dirigés (TD) en groupes de 26 étudiants et les Travaux Pratiques (TP) en groupes de 13 étudiants afin de garantir un suivi de qualité de la progression des étudiants et appliquer une pédagogique efficace.</p>
+
+<p>Des enseignements d’adaptation de parcours prennent place au cours du semestre 1. Ils permettent notamment une remise à niveau sur les différentes thématiques abordées au cours du DUT et l’acquisition d'une méthodologie de travail. Ils préparent l’étudiant à être autonome dans ses apprentissages tout au long de son cursus.</p>
+<div class="dataviz">
+    <div class="controls">
+        <div class="select">
+            <select id="myselect">
+                <option value="semestre-1">Semestre 1</option>
+                <option value="semestre-2">Semestre 2</option>
+                <option value="semestre-3">Semestre 3</option>
+                <option value="semestre-4">Semestre 4</option>
+            </select>
+        </div>
+        <div id="selectTrie">
+            <select id="myselectTrie">
+                <option value="autre">Ordre UV</option>
+                <option value="ascendant">ascendant</option>
+                <option value="descendant">descendant</option>
+            </select>
+            <div class="switch_box box_1">
+                <label>Cours séparé</label><input type="checkbox" class="switch_1" id="checkbox" onchange="partage()">
+            </div>
+        </div>
+        <div id="Couleur">
+            <h2 id="cm">Les CMs</h2>
+            <H2 id="td">Les TDs</H2>
+            <H2 id="tp">Les Tps</H2>
+        </div>
+    </div>
+    <div class="barchart"></div>
+</div>
+</div>
+<script>
+    // Largeur, hauteur et marges
+    var margin = { top: 30, right: 30, bottom: 10, left: 350 },
+        width  = 800,
+        height = 550;
+
+    var duration = 1000;
+
+    // Créer un élément SVG
+    // la méthode select de D3 sélectionne un élément du DOM
+    // D3 utilise une technique appelée syntaxe en chaîne, que vous avec peut-être déjà vu en jQuery. En “enchaînant” les méthodes avec des points, vous pouvez effectuer plusieurs actions en une seule ligne de code.
+    var svg = d3.select(".barchart")
+
+    // http://devdocs.io/d3~3/selections.md#append
+        .append("svg")
+
+        // http://devdocs.io/d3~3/selections.md#attr
+        .attr("viewBox", '0 0 ' + width + ' ' + height)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    // Les générateurs d’échelles de D3 sont accessibles avec d3.scale suivi du type d’échelle que vous souhaitez.
+    // Les échelles linéaires utilisent des valeurs numériques en sortie
+    // http://devdocs.io/d3~3/quantitative-scales.md#linear
+    var xScale = d3.scale.linear()
+
+    // On définit le domaine d’entrée en passant les valeurs dans un tableau à la méthode domain() :
+    // http://devdocs.io/d3~3/quantitative-scales.md#linear_domain
+    // ou d3.max(data, function(d) { return d.heures; }) dans la fonction avec l'appel des données
+        .domain([0, 50])
+
+        // On définit la plage de sortie d’une manière similaire, avec range()
+        // http://devdocs.io/d3~3/quantitative-scales.md#linear_range
+        .range([0, width - margin.left - margin.right]);
+
+    // On utilise d3.svg.axis() pour créer une fonction d’axe générique
+    // http://devdocs.io/d3~3/svg-axes.md#axis
+    var xAxis = d3.svg.axis()
+
+    // On définit l'axe en fonction de l'échelle définie plus haut.
+    // http://devdocs.io/d3~3/svg-axes.md#scale
+        .scale(xScale)
+
+        // On spécifie où les étiquettes doivent apparaître relativement à l’axe lui-même.
+        // http://devdocs.io/d3~3/svg-axes.md#orient
+        .orient("top");
+
+    svg.append("g")
+        .attr("class", "x axis")
+
+        // La fonction call() de D3 prend en entrée une sélection et transmet cette sélection à une fonction.
+        // http://devdocs.io/d3~3/selections.md#call
+        .call(xAxis)
+
+    var yScale = d3.scale.ordinal()
+
+    // On définit la plage de sortie à partir d'un interval définit par un tableau de deux éléments représentant la valeur numérique minimale et maximale. Cet interval est subdivisé en n bandes régulièrement espacées, où n est le nombre de valeurs (uniques) dans le domaine d'entrée.
+    // la troisème valeur (optionnelle) permet d'ajouter un espace entre les barres
+    // la variante rangeRoundBands calcule les positions qui s'accrochent aux limites exactes des pixels pour des bords nets.
+    // http://devdocs.io/d3~3/ordinal-scales.md#ordinal_rangeRoundBands
+        .rangeRoundBands([0, height - margin.top - margin.bottom], .2);
+
+    svg.append("g")
+        .attr("class", "y axis")
+        .attr("transform", "translate(-50)");
+
+    // -------------------------------------------------------------------
+    // Fonction qui redessine le graphique à chaque changement de données
+
+    var dataActuel = null;
+
+    function redrawChart(newdata) {
+
+        dataActuel = newdata;
+
+        // On définit la plage d'entrée de yScale en fonction du nombre de modules enregistrés dans le fichier de données
+        yScale.domain(newdata.map(function(d) { return d.module; }));
+
+        //La fonction rangeBand permet de détermniner automatiquement la hauteur en fonction du nombre de modules et de la hauteur totale du SVG.
+        var middleBarHeight = yScale.rangeBand()/2;
+
+        var newTick = svg.select(".y.axis")
+            .selectAll("g.tick")
+            // La méthode data() compte et analyse les valeurs des données. Il y a 17 modules dans notre ensemble de données, donc à partir de là, tout ce qui se passe sera exécuté 17 fois, une fois par module.
+            .data(newdata);
+
+        var tick = newTick
+        // Pour créer de nouveaux éléments liés à des données, on doit utiliser la méthode enter(). Cette méthode jette un oeil au DOM, puis aux données qui lui ont été transmises. S’il y a plus de données que d’éléments DOM correspondants, alors enter() crée un nouvel élément. Elle transmet ensuite une référence à ce nouveau placeholder au prochain maillon de la chaîne.
+            .enter()
+            .append("g")
+            .attr("class", "tick")
+            .attr("opacity", 0)
+            // On utilise la fonction yScale() pour retourner une valeur mise à l’échelle (à la place de la valeur originale).
+            .attr("transform", function(d){ return "translate(0," + yScale(d.module) + ")"; });
+
+        // On ajoute et on positionne le numéro du module
+        tick.append("text")
+            .attr("class","module_id")
+            .attr("y", middleBarHeight)
+            .attr("dy",".35rem")
+            .attr("dx","4rem")
+            .text(function(d){ return d.module; });
+
+        // On ajoute et on positionne le nom du module
+        tick.append("text")
+            .attr("class","module_name")
+            .attr("y", middleBarHeight)
+            .attr("dy",".35rem")
+            .text(function(d){ return d.name; });
+
+        var newRow = svg.selectAll("g.module")
+            .data(newdata)
+
+        var row = newRow
+            .enter()
+            .append("g")
+            .attr("class", "module")
+            .attr("transform", function(d){ return "translate(0," + yScale(d.module) + ")"; });
+
+        row.insert("rect")
+            .attr("class", "module_bar")
+            .attr("x", 0)
+            .attr("height", yScale.rangeBand())
+            .attr("width", 0);
+
+        row.insert("rect")
+            .attr("class", "module_bar2")
+            .attr("x", 0)
+            .attr("height", yScale.rangeBand())
+            .attr("width", 0);
+
+        row.insert("rect")
+            .attr("class", "module_bar3")
+            .attr("x", 0)
+            .attr("height", yScale.rangeBand())
+            .attr("width", 0);
+
+        row.append("text")
+            .attr("class","module_hours")
+            .attr("y", middleBarHeight)
+            .attr("x", 0)
+            .attr("y", yScale.rangeBand()/3)
+            .attr("opacity",0)
+            .attr("dy",".35em")
+            .attr("dx","0.5em")
+            .text(0);
+
+        //-----------------------//
+        //------- UPDATE --------//
+        //-----------------------//
+
+        newTick.transition()
+            .duration(duration)
+            .attr("opacity", 1)
+            .attr("transform", function(d){ return "translate(0," + yScale(d.module) + ")"; });
+
+        newTick.select(".module_id")
+            .transition()
+            .duration(duration)
+            .attr("y", middleBarHeight)
+            .attr("opacity", 0)
+            .transition()
+            .attr("opacity", 1)
+            .text(function(d){ return d.module })
+            .delay(duration/2);
+
+        newTick.select(".module_name")
+            .transition()
+            .duration(duration)
+            .attr("y", middleBarHeight)
+            .attr("opacity", 0)
+            .transition()
+            .attr("opacity", 1)
+            .text(function(d){ return d.name })
+            .delay(duration/2);
+
+        newRow.transition()
+            .duration(duration)
+            .attr("transform", function(d){ return "translate(0," + yScale(d.module) + ")"; });
+
+
+
+
+        if(document.querySelector("#checkbox").checked===true){
+            newRow.select(".module_bar")
+                .transition()
+                .duration(duration)
+                .attr("height", yScale.rangeBand()/3)
+                .transition()
+                .duration(duration)
+                .attr("width", function(d) { return xScale(d.cm); });
+
+            newRow.select(".module_bar2")
+                .transition()
+                .duration(duration)
+                .attr("height", yScale.rangeBand()/3)
+                .attr("y", yScale.rangeBand()/3)
+                .attr("x",0)
+                .transition()
+                .duration(duration)
+                .attr("width", function(d) { return xScale(d.td); });
+
+
+            newRow.select(".module_bar3")
+                .transition()
+                .duration(duration)
+                .attr("height", yScale.rangeBand()/3)
+                .attr("y", yScale.rangeBand()/3+yScale.rangeBand()/3)
+                .attr("x",0)
+                .transition()
+                .duration(duration)
+                .attr("width", function(d) { return xScale(d.tp); });
+
+            newRow.select(".module_hours")
+                .transition()
+                .duration(duration)
+                .attr("y", middleBarHeight)
+                .transition()
+                .attr("x",function(d) { return xScale(d.heures);})
+                .attr("opacity",0)
+                .tween("text", function(d) {
+                    var i = d3.interpolate(+this.textContent.replace(/\,/g,''), +d.heures);
+                    return function(t) {
+                        this.textContent = Math.round(i(t));
+                    };
+                });
+
+
+        }else{
+            newRow.select(".module_bar")
+                .transition()
+                .duration(duration)
+                .attr("height", yScale.rangeBand())
+                .attr("y", 0)
+                .transition()
+                .duration(duration)
+                .attr("width", function(d) { return xScale(d.cm); });
+
+            newRow.select(".module_bar2")
+                .transition()
+                .duration(duration)
+                .attr("height", yScale.rangeBand())
+                .attr("y", 0)
+                .transition()
+                .duration(duration)
+                .attr("x",function(d) { return xScale(d.cm);})
+                .attr("width", function(d) { return xScale(d.td); });
+
+
+            newRow.select(".module_bar3")
+                .transition()
+                .duration(duration)
+                .attr("height", yScale.rangeBand())
+                .attr("y", 0)
+                .transition()
+                .duration(duration)
+                .attr("x",function(d) { return xScale(d.cm)+xScale(d.td);})
+                .attr("width", function(d) { return xScale(d.tp); });
+
+            newRow.select(".module_hours")
+                .transition()
+                .duration(duration)
+                .attr("y", middleBarHeight)
+                .attr("opacity",1)
+                .transition()
+                .attr("x",function(d) { return xScale(d.heures);})
+                .tween("text", function(d) {
+                    var i = d3.interpolate(+this.textContent.replace(/\,/g,''), +d.heures);
+                    return function(t) {
+                        this.textContent = Math.round(i(t));
+                    };
+                });
+        }
+
+
+        //-----------------------//
+        //-------- EXIT ---------//
+        //-----------------------//
+
+        newRow.exit()
+            .transition()
+            .duration(duration)
+            .style("opacity",0)
+            .attr("width", function(d) { return xScale(d.heures); })
+            .remove();
+
+        newTick.exit()
+            .transition()
+            .duration(duration)
+            .style("opacity",0)
+            .attr("width", function(d) { return xScale(d.heures); })
+            .remove();
+
+    };
+
+    //-----------------------//
+    //--- CHANGE SEMESTRE ---//
+    //-----------------------//
+    function changeSemestre() {
+
+        document.getElementById('myselectTrie').selectedIndex="autre";
+
+        var semestre = this.options[this.selectedIndex].value,
+            dataFile = '';
+
+        switch (semestre) {
+            case 'semestre-1': dataFile = "heures-mmi-s1-detail.tsv";
+                break;
+            case 'semestre-2': dataFile = "heures-mmi-s2-detail.tsv";
+                break;
+            case 'semestre-3': dataFile = "heures-mmi-s3-detail.tsv";
+                break;
+            case 'semestre-4': dataFile = "heures-mmi-s4-detail.tsv";
+                break;
+        }
+
+        // La fonction d3.tsv permet de charger des données depuis un fichier externe de manière asynchrone. Dans le fichier tsv, les données doivent être séparées par des tabulations.
+        d3.tsv(dataFile,function(error, data) {
+
+            redrawChart(data);
+        });
+
+    };
+
+    d3.tsv("heures-mmi-s1-detail.tsv", function(error, data) {
+
+        redrawChart(data);
+    });
+
+    d3.select("select").on("change", changeSemestre);
+
+    // Problème avec des données externes: les types! La colonne name contient des chaînes tandis que la colonne heures contient des nombres. Malheureusement, d3.tsv n'est pas assez intelligent pour détecter et convertir les types automatiquement. Au lieu de cela, nous spécifions une fonction de type passée en second argument à d3.tsv. Cette fonction de conversion de type peut modifier l'objet de données représentant chaque ligne, en le modifiant ou en le convertissant en une représentation plus appropriée.
+    // La conversion de type n'est pas strictement nécessaire, mais c'est une bonne pratique. Par défaut, toutes les colonnes des fichiers TSV et CSV sont des chaînes. Si vous oubliez de convertir des chaînes en nombres, JavaScript risque de ne pas faire ce que vous attendez, disons "12" pour "1" + "2" plutôt que 3. De même, si vous triez les chaînes plutôt que les nombres, le comportement lexicographique .max peut vous surprendre!
+    function type(d) {
+        d.heures = +d.heures;
+        return d;
+    }
+
+    //-----------------------//
+    //--- Trier donnee ---//
+    //-----------------------//
+    function trier() {
+        var trie = this.options[this.selectedIndex].value,
+            dataFile = null;
+
+        switch (trie) {
+            case 'ascendant': dataFile = dataActuel.sort((a,b) => a.heures - b.heures);
+                break;
+            case 'descendant': dataFile = dataActuel.sort((a,b) => b.heures - a.heures);
+                break;
+            case 'autre': dataFile = dataActuel.sort((a,b) => a.name.localeCompare(b.name));
+                break;
+        }
+
+        redrawChart(dataFile);
+    };
+
+    d3.select("#myselectTrie").on("change", trier);
+
+    function partage() {
+        redrawChart(dataActuel);
+    }
+
+</script>
+</body>
+</html>
